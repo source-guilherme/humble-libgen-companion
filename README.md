@@ -18,7 +18,7 @@ A userscript that adds a floating LibGen panel to Humble Bundle book pages.
 ## 🚀 How to Install
 
 1. Install a userscript manager like [Tampermonkey](https://www.tampermonkey.net/)
-2. Open [this script's raw file](https://raw.githubusercontent.com/YOUR_USERNAME/humble-libgen-companion/main/humble-libgen-companion.user.js)
+2. Open [this script's raw file](https://raw.githubusercontent.com/source-guilherme/humble-libgen-companion/main/humble-libgen-companion.user.js)
 3. Tampermonkey will prompt you to install it
 4. Visit any Humble Bundle books page — and you're good to go
 
