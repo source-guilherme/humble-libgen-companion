@@ -18,6 +18,7 @@
     let searchMode = 'nonfiction';
     let searchField = 'book';
     let theme = localStorage.getItem('libgenPanelTheme') || 'light';
+    let searchSource = localStorage.getItem('libgenSearchSource') || 'libgen'; // or 'anna'
 
     const seenTitles = new Set();
 
@@ -77,6 +78,20 @@
         applyTheme();
     };
 
+    const sourceBtn = document.createElement('button');
+    sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
+    sourceBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
+    sourceBtn.onclick = () => {
+        searchSource = searchSource === 'libgen' ? 'anna' : 'libgen';
+        localStorage.setItem('libgenSearchSource', searchSource);
+        sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
+        seenTitles.clear();
+        linksContainer.innerHTML = '';
+        addLibgenLinks();
+        applyTheme();
+    };
+    controls.appendChild(sourceBtn);
+
     function applyTheme() {
         if (theme === 'dark') {
             panel.style.background = '#222';
@@ -99,6 +114,8 @@
             modeBtn.style.color = '#000';
             fieldBtn.style.background = '#ddd';
             fieldBtn.style.color = '#000';
+            sourceBtn.style.background = theme === 'dark' ? '#555' : '#ddd';
+            sourceBtn.style.color = theme === 'dark' ? '#eee' : '#000';
             [...panel.querySelectorAll('a')].forEach(link => {
                 link.style.color = '#1a0dab';
             });
@@ -170,7 +187,9 @@
             .replace(/\s+/g, '+');
 
             let url = '';
-            if (searchField === 'author') {
+            if (searchSource === 'anna') {
+                url = `https://annas-archive.org/search?q=${query}`;
+            } else if (searchField === 'author') {
                 url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=simple&phrase=1&column=author`;
             } else if (searchMode === 'nonfiction') {
                 url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=simple&phrase=1&column=title`;
