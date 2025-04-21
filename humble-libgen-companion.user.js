@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Humble LibGen Companion
 // @namespace    https://github.com/source-guilherme
-// @version      4.0
+// @version      4.1
 // @description  Adds a floating panel to Humble Bundle book pages with quick LibGen search links by book title or author, supporting fiction/non-fiction modes, query sanitizing, and persistent dark mode.
 // @author       Source-Guilherme
 // @match        https://www.humblebundle.com/books/*
