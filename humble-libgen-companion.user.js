@@ -102,6 +102,8 @@
             modeBtn.style.color = '#eee';
             fieldBtn.style.background = '#555';
             fieldBtn.style.color = '#eee';
+            sourceBtn.style.background = '#555';
+            sourceBtn.style.color = '#eee';
             [...panel.querySelectorAll('a')].forEach(link => {
                 link.style.color = '#9cf';
             });
@@ -114,8 +116,8 @@
             modeBtn.style.color = '#000';
             fieldBtn.style.background = '#ddd';
             fieldBtn.style.color = '#000';
-            sourceBtn.style.background = theme === 'dark' ? '#555' : '#ddd';
-            sourceBtn.style.color = theme === 'dark' ? '#eee' : '#000';
+            sourceBtn.style.background = '#ddd';
+            sourceBtn.style.color = '#000';
             [...panel.querySelectorAll('a')].forEach(link => {
                 link.style.color = '#1a0dab';
             });
