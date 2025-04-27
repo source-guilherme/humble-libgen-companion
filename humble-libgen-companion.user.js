@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Humble LibGen Companion
 // @namespace    https://github.com/source-guilherme
-// @version      4.2
+// @version      4.3
 // @description  Adds a floating panel to Humble Bundle book pages with quick LibGen search links by book title or author, supporting fiction/non-fiction modes, query sanitizing, and persistent dark mode.
 // @author       Source-Guilherme
 // @match        https://www.humblebundle.com/books/*
@@ -11,17 +11,25 @@
 // @downloadURL  https://raw.githubusercontent.com/source-guilherme/humble-libgen-companion/main/humble-libgen-companion.user.js
 // ==/UserScript==
 
-(function () {
+(function() {
     'use strict';
 
-    const libgenIconURL = 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Emoji_u1f517.svg';
-    let searchMode = 'nonfiction';
-    let searchField = 'book';
-    let theme = localStorage.getItem('libgenPanelTheme') || 'light';
+    let searchMode = localStorage.getItem('libgenSearchMode') || 'nonfiction';
+    let searchField = localStorage.getItem('libgenSearchField') || 'book';
     let searchSource = localStorage.getItem('libgenSearchSource') || 'libgen';
+    let theme = localStorage.getItem('libgenPanelTheme') || 'light';
     let libgenViewMode = 'simple';
 
     const seenTitles = new Set();
+    const libgenIconURL = 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Emoji_u1f517.svg';
+
+    function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
 
     const panel = document.createElement('div');
     panel.id = 'libgen-panel';
@@ -63,84 +71,17 @@
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     };
 
-    const themeBtn = document.createElement('button');
-    const modeBtn = document.createElement('button');
     const controls = document.createElement('div');
-    const linksContainer = document.createElement('div');
-    const fieldBtn = document.createElement('button');
-    const viewBtn = document.createElement('button');
-    viewBtn.textContent = '🔄 View: Simple';
-    viewBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
-    viewBtn.onclick = () => {
-        libgenViewMode = libgenViewMode === 'simple' ? 'detailed' : 'simple';
-        viewBtn.textContent = `🔄 View: ${libgenViewMode.charAt(0).toUpperCase() + libgenViewMode.slice(1)}`;
-        addLibgenLinks();
-        applyTheme();
-    };
-    
-    fieldBtn.textContent = '👤 Search: Book';
-    fieldBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
-    fieldBtn.onclick = () => {
-        searchField = searchField === 'book' ? 'author' : 'book';
-        fieldBtn.textContent = `👤 Search: ${searchField === 'book' ? 'Book' : 'Author'}`;
-        seenTitles.clear();
-        linksContainer.innerHTML = '';
-        addLibgenLinks();
-        applyTheme();
-    };
+    controls.style = 'margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;';
 
-    const sourceBtn = document.createElement('button');
-    sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
-    sourceBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
-    sourceBtn.onclick = () => {
-        searchSource = searchSource === 'libgen' ? 'anna' : 'libgen';
-        localStorage.setItem('libgenSearchSource', searchSource);
-        sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
-        seenTitles.clear();
-        linksContainer.innerHTML = '';
-        addLibgenLinks();
-        applyTheme();
-    };
-    controls.appendChild(sourceBtn);
-
-    function applyTheme() {
-        if (theme === 'dark') {
-            panel.style.background = '#222';
-            panel.style.color = '#eee';
-            themeBtn.style.background = '#555';
-            themeBtn.style.color = '#eee';
-            modeBtn.style.background = '#555';
-            modeBtn.style.color = '#eee';
-            fieldBtn.style.background = '#555';
-            fieldBtn.style.color = '#eee';
-            sourceBtn.style.background = '#555';
-            sourceBtn.style.color = '#eee';
-            [...panel.querySelectorAll('a')].forEach(link => {
-                link.style.color = '#9cf';
-            });
-            viewBtn.style.background = '#555';
-            viewBtn.style.color = '#eee';
-        } else {
-            panel.style.background = '#fff';
-            panel.style.color = '#000';
-            themeBtn.style.background = '#ddd';
-            themeBtn.style.color = '#000';
-            modeBtn.style.background = '#ddd';
-            modeBtn.style.color = '#000';
-            fieldBtn.style.background = '#ddd';
-            fieldBtn.style.color = '#000';
-            sourceBtn.style.background = '#ddd';
-            sourceBtn.style.color = '#000';
-            [...panel.querySelectorAll('a')].forEach(link => {
-                link.style.color = '#1a0dab';
-            });
-            viewBtn.style.background = '#ddd';
-            viewBtn.style.color = '#000';
-        }
-    }
-
-    themeBtn.textContent = '🌓 Theme: Light';
-    themeBtn.style = 'margin-right: 5px; padding: 4px 8px; cursor: pointer;';
+    const themeBtn = document.createElement('button');
+    themeBtn.textContent = `🌓 Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`;
+    themeBtn.style = 'padding: 4px 8px; cursor: pointer;';
+    themeBtn.style.width = '140px'; // or whatever size fits nicely
+    themeBtn.style.textAlign = 'center';
+    themeBtn.style.overflow = 'hidden';
+    themeBtn.style.whiteSpace = 'nowrap';
+    themeBtn.style.textOverflow = 'ellipsis'; // optional, if you want ellipsis
     themeBtn.onclick = () => {
         theme = theme === 'light' ? 'dark' : 'light';
         localStorage.setItem('libgenPanelTheme', theme);
@@ -148,48 +89,125 @@
         applyTheme();
     };
 
-
-    modeBtn.textContent = '🔍 Mode: Non-Fiction';
-    modeBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
+    const modeBtn = document.createElement('button');
+    modeBtn.textContent = `🔍 Mode: ${searchMode === 'fiction' ? 'Fiction' : 'Non-Fiction'}`;
+    modeBtn.style = 'padding: 4px 8px; cursor: pointer;';
+    modeBtn.style.width = '140px'; // or whatever size fits nicely
+    modeBtn.style.textAlign = 'center';
+    modeBtn.style.overflow = 'hidden';
+    modeBtn.style.whiteSpace = 'nowrap';
+    modeBtn.style.textOverflow = 'ellipsis'; // optional, if you want ellipsis
     modeBtn.onclick = () => {
         searchMode = searchMode === 'fiction' ? 'nonfiction' : 'fiction';
+        localStorage.setItem('libgenSearchMode', searchMode);
         modeBtn.textContent = `🔍 Mode: ${searchMode === 'fiction' ? 'Fiction' : 'Non-Fiction'}`;
-        seenTitles.clear();
-        linksContainer.innerHTML = '';
-        addLibgenLinks();
-        applyTheme();
+
+        if (searchSource === 'libgen') {
+            viewBtn.style.visibility = searchMode === 'fiction' ? 'hidden' : 'visible';
+        }
+
+        addLibgenLinks(true);
     };
 
-    controls.style = 'margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;';
+
+    const fieldBtn = document.createElement('button');
+    fieldBtn.textContent = `👤 Search: ${searchField === 'author' ? 'Author' : 'Book'}`;
+    fieldBtn.style = 'padding: 4px 8px; cursor: pointer;';
+    fieldBtn.style.width = '140px'; // or whatever size fits nicely
+    fieldBtn.style.textAlign = 'center';
+    fieldBtn.style.overflow = 'hidden';
+    fieldBtn.style.whiteSpace = 'nowrap';
+    fieldBtn.style.textOverflow = 'ellipsis'; // optional, if you want ellipsis
+    fieldBtn.onclick = () => {
+        searchField = searchField === 'book' ? 'author' : 'book';
+        localStorage.setItem('libgenSearchField', searchField);
+        fieldBtn.textContent = `👤 Search: ${searchField === 'author' ? 'Author' : 'Book'}`;
+        addLibgenLinks(true);
+    };
+
+    const sourceBtn = document.createElement('button');
+    sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
+    sourceBtn.style = 'padding: 4px 8px; cursor: pointer;';
+    sourceBtn.style.width = '140px'; // or whatever size fits nicely
+    sourceBtn.style.textAlign = 'center';
+    sourceBtn.style.overflow = 'hidden';
+    sourceBtn.style.whiteSpace = 'nowrap';
+    sourceBtn.style.textOverflow = 'ellipsis'; // optional, if you want ellipsis
+    sourceBtn.onclick = () => {
+        searchSource = searchSource === 'libgen' ? 'anna' : 'libgen';
+        localStorage.setItem('libgenSearchSource', searchSource);
+        sourceBtn.textContent = `🌐 Source: ${searchSource === 'anna' ? 'Anna' : 'LibGen'}`;
+
+        const isLibgen = searchSource === 'libgen';
+        viewBtn.style.visibility = isLibgen && searchMode !== 'fiction' ? 'visible' : 'hidden';
+        modeBtn.style.visibility = isLibgen ? 'visible' : 'hidden';
+        fieldBtn.style.visibility = 'visible'; // always
+        themeBtn.style.visibility = 'visible'; // always
+        sourceBtn.style.visibility = 'visible'; // always
+
+        addLibgenLinks(true);
+    };
+
+
+    const viewBtn = document.createElement('button');
+    viewBtn.textContent = `🔄 View: ${libgenViewMode === 'simple' ? 'Simple' : 'Detailed'}`;
+    viewBtn.style = 'padding: 4px 8px; cursor: pointer;';
+    viewBtn.style.width = '140px'; // or whatever size fits nicely
+    viewBtn.style.textAlign = 'center';
+    viewBtn.style.overflow = 'hidden';
+    viewBtn.style.whiteSpace = 'nowrap';
+    viewBtn.style.textOverflow = 'ellipsis'; // optional, if you want ellipsis
+    viewBtn.onclick = () => {
+        if (searchSource !== 'libgen') {
+            alert('🔔 View switch only works in LibGen source mode.');
+            return;
+        }
+        libgenViewMode = libgenViewMode === 'simple' ? 'detailed' : 'simple';
+        viewBtn.textContent = `🔄 View: ${libgenViewMode.charAt(0).toUpperCase() + libgenViewMode.slice(1)}`;
+        addLibgenLinks(true);
+    };
+    viewBtn.style.visibility = (searchSource === 'libgen' && searchMode !== 'fiction') ? 'inline-block' : 'none';
+    modeBtn.style.visibility = searchSource === 'libgen' ? 'inline-block' : 'none';
+    fieldBtn.style.visibility = 'inline-block';
+
     controls.appendChild(themeBtn);
     controls.appendChild(modeBtn);
     controls.appendChild(fieldBtn);
+    controls.appendChild(sourceBtn);
+    controls.appendChild(viewBtn);
+
+    const linksContainer = document.createElement('div');
+    linksContainer.id = 'libgen-links';
 
     panel.appendChild(controls);
     panel.appendChild(linksContainer);
     document.body.appendChild(toggleBtn);
     document.body.appendChild(panel);
 
-    const getAuthorForTitle = (titleEl) => {
-        const container = titleEl.closest('div.dd-image-box-text');
-        if (!container) return null;
-        const authorDiv = container.querySelector('.publishers-and-developers span');
-        return authorDiv ? authorDiv.textContent.trim() : null;
-    };
+    function applyTheme() {
+        panel.style.background = theme === 'dark' ? '#222' : '#fff';
+        panel.style.color = theme === 'dark' ? '#eee' : '#000';
+        [themeBtn, modeBtn, fieldBtn, sourceBtn, viewBtn].forEach(btn => {
+            btn.style.background = theme === 'dark' ? '#555' : '#ddd';
+            btn.style.color = theme === 'dark' ? '#eee' : '#000';
+        });
+        [...linksContainer.querySelectorAll('a')].forEach(link => {
+            link.style.color = theme === 'dark' ? '#9cf' : '#1a0dab';
+        });
+    }
 
-    function addLibgenLinks() {
+    function addLibgenLinks(forceClear = false) {
+        if (forceClear) seenTitles.clear();
         linksContainer.innerHTML = '';
-        seenTitles.clear();
-        
         const bookBlocks = document.querySelectorAll('div.tier-item-details-view');
         bookBlocks.forEach(block => {
             const titleEl = block.querySelector('h2.heading-medium');
             if (!titleEl) return;
-
-            const bookTitle = titleEl.textContent.trim();
+            let bookTitle = titleEl.textContent.trim();
+            bookTitle = bookTitle.replace(/\b(\d+(st|nd|rd|th)|First|Second|Third|Fourth|Fifth) Edition\b/gi, '').trim();
             if (!bookTitle || seenTitles.has(bookTitle)) return;
             seenTitles.add(bookTitle);
-          
+
             let author = null;
             const pubInfoBlocks = block.querySelectorAll('.publishers-and-developers');
             pubInfoBlocks.forEach(info => {
@@ -198,25 +216,49 @@
                     if (span) author = span.textContent.trim();
                 }
             });
-          
+
             let rawQuery = searchField === 'author' ? author : bookTitle;
             if (!rawQuery) return;
 
+            // 🔥 New cleaner query logic
             let query = rawQuery
-            .replace(/[\/\\,:;'"“”‘’\[\](){}<>|*!?&#@%^~=`$]/g, '')
-            .replace(/\s+/g, '+');
+            .replace(/\b(\d+(st|nd|rd|th)|First|Second|Third|Fourth|Fifth) Edition\b/gi, '') // remove editions
+            .replace(/,/g, '') // remove commas
+            .replace(/[\/\\:;'"“”‘’\[\](){}<>|*!?&#@%^~=`$]/g, '') // remove other unwanted characters
+            .replace(/\s+/g, '+') // replace spaces with +
+            .trim();
 
             let url = '';
             if (searchSource === 'anna') {
-                url = `https://annas-archive.org/search?q=${query}`;
-            } else if (searchField === 'author') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=${libgenViewMode}&phrase=1&column=author`;
-            } else if (searchMode === 'nonfiction') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=${libgenViewMode}&phrase=1&column=title`;
+                if (searchField === 'author') {
+                    url = `https://annas-archive.org/search?q=${query}`;
+                } else {
+                    url = `https://annas-archive.org/search?q=${query}`;
+                }
+            } else if (searchMode === 'fiction') {
+                // Fiction Mode
+                if (searchField === 'author') {
+                    url = `https://libgen.is/fiction/?q=${query}&criteria=authors`;
+                } else {
+                    url = `https://libgen.is/fiction/?q=${query}`;
+                }
             } else {
-                url = `https://libgen.is/fiction/?q=${query}`;
+                // Non-Fiction Mode
+                if (searchField === 'author') {
+                    url = `https://libgen.is/search.php?req=${query}&view=${libgenViewMode}&column=author`;
+                } else {
+                    url = `https://libgen.is/search.php?req=${query}&view=${libgenViewMode}&column=title`;
+                }
             }
-          
+
+
+            // 🔥 Clean the visible title too
+            let cleanTitle = bookTitle
+            .replace(/\b(\d+(st|nd|rd|th)|First|Second|Third|Fourth|Fifth) Edition\b/gi, '')
+            .replace(/,/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
             const link = document.createElement('a');
             link.href = url;
             link.target = '_blank';
@@ -233,46 +275,22 @@
             icon.style.verticalAlign = 'middle';
 
             link.appendChild(icon);
-            link.appendChild(document.createTextNode(bookTitle));
+            link.appendChild(document.createTextNode(cleanTitle));
             linksContainer.appendChild(link);
         });
+        applyTheme();
+    }
 
-        if (searchSource === 'libgen') {
-            const detailedButtonContainer = document.createElement('div');
-            detailedButtonContainer.style.marginTop = '10px';
-            detailedButtonContainer.style.textAlign = 'center';
-        
-            const detailedButton = document.createElement('a');
-            detailedButton.href = `https://libgen.is/search.php?req=&open=0&res=25&view=detailed&phrase=1&column=def`;
-            detailedButton.target = '_blank';
-            detailedButton.textContent = '🔎 Open LibGen (Detailed View)';
-            detailedButton.style = `
-                background: ${theme === 'dark' ? '#555' : '#ddd'};
-                color: ${theme === 'dark' ? '#eee' : '#000'};
-                text-decoration: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                display: inline-block;
-                font-weight: bold;
-            `;
-        
-            detailedButtonContainer.appendChild(detailedButton);
-            linksContainer.appendChild(detailedButtonContainer);
+    const debouncedAddLibgenLinks = debounce(() => addLibgenLinks(false), 1000);
+    const observer = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+            if ([...mutation.addedNodes].some(node => node.nodeType === 1 && node.matches && node.matches('div.tier-item-details-view'))) {
+                debouncedAddLibgenLinks();
+                break;
+            }
         }
-    }
+    });
+    observer.observe(document.querySelector('div.content-container') || document.body, { childList: true, subtree: true });
 
-    function debounce(fn, delay = 500) {
-        let timeout;
-        return () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(fn, delay);
-        };
-    }
-
-    const debouncedRun = debounce(addLibgenLinks);
-    const observer = new MutationObserver(debouncedRun);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    applyTheme();
-    addLibgenLinks();
+    addLibgenLinks(true);
 })();
