@@ -163,6 +163,9 @@
     };
 
     function addLibgenLinks() {
+        linksContainer.innerHTML = '';
+        seenTitles.clear();
+        
         const bookBlocks = document.querySelectorAll('div.tier-item-details-view');
         bookBlocks.forEach(block => {
             const titleEl = block.querySelector('h2.heading-medium');
