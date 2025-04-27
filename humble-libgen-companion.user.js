@@ -192,11 +192,11 @@
             if (searchSource === 'anna') {
                 url = `https://annas-archive.org/search?q=${query}`;
             } else if (searchField === 'author') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=simple&phrase=1&column=author`;
+                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=detailed&phrase=1&column=author`;
             } else if (searchMode === 'nonfiction') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=simple&phrase=1&column=title`;
+                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=detailed&phrase=1&column=title`;
             } else {
-                url = `https://libgen.is/fiction/?q=${query}`;
+                url = `https://libgen.is/fiction/?q=${query}`; // Fiction still uses /fiction/
             }
           
             const link = document.createElement('a');
