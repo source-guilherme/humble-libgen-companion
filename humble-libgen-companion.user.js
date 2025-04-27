@@ -18,7 +18,8 @@
     let searchMode = 'nonfiction';
     let searchField = 'book';
     let theme = localStorage.getItem('libgenPanelTheme') || 'light';
-    let searchSource = localStorage.getItem('libgenSearchSource') || 'libgen'; // or 'anna'
+    let searchSource = localStorage.getItem('libgenSearchSource') || 'libgen';
+    let libgenViewMode = 'simple';
 
     const seenTitles = new Set();
 
@@ -67,6 +68,16 @@
     const controls = document.createElement('div');
     const linksContainer = document.createElement('div');
     const fieldBtn = document.createElement('button');
+    const viewBtn = document.createElement('button');
+    viewBtn.textContent = '🔄 View: Simple';
+    viewBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
+    viewBtn.onclick = () => {
+        libgenViewMode = libgenViewMode === 'simple' ? 'detailed' : 'simple';
+        viewBtn.textContent = `🔄 View: ${libgenViewMode.charAt(0).toUpperCase() + libgenViewMode.slice(1)}`;
+        addLibgenLinks();
+        applyTheme();
+    };
+    
     fieldBtn.textContent = '👤 Search: Book';
     fieldBtn.style = 'margin-left: 5px; padding: 4px 8px; cursor: pointer;';
     fieldBtn.onclick = () => {
@@ -107,6 +118,8 @@
             [...panel.querySelectorAll('a')].forEach(link => {
                 link.style.color = '#9cf';
             });
+            viewBtn.style.background = '#555';
+            viewBtn.style.color = '#eee';
         } else {
             panel.style.background = '#fff';
             panel.style.color = '#000';
@@ -121,6 +134,8 @@
             [...panel.querySelectorAll('a')].forEach(link => {
                 link.style.color = '#1a0dab';
             });
+            viewBtn.style.background = '#ddd';
+            viewBtn.style.color = '#000';
         }
     }
 
@@ -195,11 +210,11 @@
             if (searchSource === 'anna') {
                 url = `https://annas-archive.org/search?q=${query}`;
             } else if (searchField === 'author') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=detailed&phrase=1&column=author`;
+                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=${libgenViewMode}&phrase=1&column=author`;
             } else if (searchMode === 'nonfiction') {
-                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=detailed&phrase=1&column=title`;
+                url = `https://libgen.is/search.php?req=${query}&open=0&res=25&view=${libgenViewMode}&phrase=1&column=title`;
             } else {
-                url = `https://libgen.is/fiction/?q=${query}`; // Fiction still uses /fiction/
+                url = `https://libgen.is/fiction/?q=${query}`;
             }
           
             const link = document.createElement('a');
