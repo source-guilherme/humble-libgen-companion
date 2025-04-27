@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Humble LibGen Companion
 // @namespace    https://github.com/source-guilherme
-// @version      4.1
+// @version      4.2
 // @description  Adds a floating panel to Humble Bundle book pages with quick LibGen search links by book title or author, supporting fiction/non-fiction modes, query sanitizing, and persistent dark mode.
 // @author       Source-Guilherme
 // @match        https://www.humblebundle.com/books/*
@@ -145,7 +145,7 @@
         applyTheme();
     };
 
-    controls.style = 'margin-bottom: 10px; display: flex; justify-content: space-between;';
+    controls.style = 'margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;';
     controls.appendChild(themeBtn);
     controls.appendChild(modeBtn);
     controls.appendChild(fieldBtn);
@@ -218,6 +218,29 @@
             link.appendChild(document.createTextNode(bookTitle));
             linksContainer.appendChild(link);
         });
+
+        if (searchSource === 'libgen') {
+            const detailedButtonContainer = document.createElement('div');
+            detailedButtonContainer.style.marginTop = '10px';
+            detailedButtonContainer.style.textAlign = 'center';
+        
+            const detailedButton = document.createElement('a');
+            detailedButton.href = `https://libgen.is/search.php?req=&open=0&res=25&view=detailed&phrase=1&column=def`;
+            detailedButton.target = '_blank';
+            detailedButton.textContent = '🔎 Open LibGen (Detailed View)';
+            detailedButton.style = `
+                background: ${theme === 'dark' ? '#555' : '#ddd'};
+                color: ${theme === 'dark' ? '#eee' : '#000'};
+                text-decoration: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                display: inline-block;
+                font-weight: bold;
+            `;
+        
+            detailedButtonContainer.appendChild(detailedButton);
+            linksContainer.appendChild(detailedButtonContainer);
+        }
     }
 
     function debounce(fn, delay = 500) {
